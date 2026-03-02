@@ -1,0 +1,18 @@
+# Env files (only examples go to git)
+env/*.env
+!env/*.env.example
+
+# Certs
+nginx/certs/*.crt
+nginx/certs/*.key
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/

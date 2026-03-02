@@ -1,0 +1,56 @@
+{
+  "users": [
+    {
+      "name": "mipit",
+      "password_hash": "",
+      "hashing_algorithm": "rabbit_password_hashing_sha256",
+      "tags": "administrator"
+    }
+  ],
+  "vhosts": [{ "name": "mipit" }],
+  "permissions": [
+    { "user": "mipit", "vhost": "mipit", "configure": ".*", "write": ".*", "read": ".*" }
+  ],
+  "exchanges": [
+    { "name": "mipit.payments", "vhost": "mipit", "type": "topic", "durable": true, "auto_delete": false },
+    { "name": "mipit.dlx",     "vhost": "mipit", "type": "topic", "durable": true, "auto_delete": false }
+  ],
+  "queues": [
+    {
+      "name": "payments.route.pix",
+      "vhost": "mipit",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "mipit.dlx",
+        "x-dead-letter-routing-key": "dlq.pix"
+      }
+    },
+    {
+      "name": "payments.route.spei",
+      "vhost": "mipit",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "mipit.dlx",
+        "x-dead-letter-routing-key": "dlq.spei"
+      }
+    },
+    {
+      "name": "payments.ack",
+      "vhost": "mipit",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    { "name": "dlq.pix",  "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} },
+    { "name": "dlq.spei", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} }
+  ],
+  "bindings": [
+    { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.route.pix",  "destination_type": "queue", "routing_key": "route.pix" },
+    { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.route.spei", "destination_type": "queue", "routing_key": "route.spei" },
+    { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.ack",        "destination_type": "queue", "routing_key": "ack.#" },
+    { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.pix",              "destination_type": "queue", "routing_key": "dlq.pix" },
+    { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.spei",             "destination_type": "queue", "routing_key": "dlq.spei" }
+  ]
+}

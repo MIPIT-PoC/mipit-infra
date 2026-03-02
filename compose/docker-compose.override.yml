@@ -1,0 +1,42 @@
+version: "3.9"
+
+# Development overrides — hot-reload, debug ports, relaxed resource limits
+services:
+  core:
+    build:
+      context: ../../mipit-core
+      dockerfile: Dockerfile
+    volumes:
+      - ../../mipit-core/src:/app/src:ro
+    environment:
+      - LOG_LEVEL=debug
+      - NODE_ENV=development
+
+  adapter-pix:
+    build:
+      context: ../../mipit-adapter-pix
+      dockerfile: Dockerfile
+    volumes:
+      - ../../mipit-adapter-pix/src:/app/src:ro
+    environment:
+      - LOG_LEVEL=debug
+      - NODE_ENV=development
+
+  adapter-spei:
+    build:
+      context: ../../mipit-adapter-spei
+      dockerfile: Dockerfile
+    volumes:
+      - ../../mipit-adapter-spei/src:/app/src:ro
+    environment:
+      - LOG_LEVEL=debug
+      - NODE_ENV=development
+
+  ui:
+    build:
+      context: ../../mipit-ui
+      dockerfile: Dockerfile
+    volumes:
+      - ../../mipit-ui/src:/app/src:ro
+    environment:
+      - NODE_ENV=development

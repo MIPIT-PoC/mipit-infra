@@ -1,0 +1,178 @@
+version: "3.9"
+
+networks:
+  mipit-internal:
+    driver: bridge
+    name: mipit-internal
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+  grafana-data:
+  prometheus-data:
+
+services:
+  # ─── Base de datos ───────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: mipit-postgres
+    restart: unless-stopped
+    env_file: ../env/postgres.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../db/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - mipit-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mipit"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ─── Mensajería ─────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: mipit-rabbitmq
+    restart: unless-stopped
+    env_file: ../env/rabbitmq.env
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ../rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ../rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ../rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+    networks:
+      - mipit-internal
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Core del Middleware ────────────────────
+  core:
+    image: ghcr.io/mipit-poc/mipit-core:latest
+    build:
+      context: ../../mipit-core
+      dockerfile: Dockerfile
+    container_name: mipit-core
+    restart: unless-stopped
+    env_file: ../env/core.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mipit-internal
+
+  # ─── Adaptador PIX ─────────────────────────
+  adapter-pix:
+    image: ghcr.io/mipit-poc/mipit-adapter-pix:latest
+    build:
+      context: ../../mipit-adapter-pix
+      dockerfile: Dockerfile
+    container_name: mipit-adapter-pix
+    restart: unless-stopped
+    env_file: ../env/pix.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mipit-internal
+
+  # ─── Adaptador SPEI ────────────────────────
+  adapter-spei:
+    image: ghcr.io/mipit-poc/mipit-adapter-spei:latest
+    build:
+      context: ../../mipit-adapter-spei
+      dockerfile: Dockerfile
+    container_name: mipit-adapter-spei
+    restart: unless-stopped
+    env_file: ../env/spei.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mipit-internal
+
+  # ─── UI ────────────────────────────────────
+  ui:
+    image: ghcr.io/mipit-poc/mipit-ui:latest
+    build:
+      context: ../../mipit-ui
+      dockerfile: Dockerfile
+    container_name: mipit-ui
+    restart: unless-stopped
+    env_file: ../env/ui.env
+    ports:
+      - "3001:3000"
+    depends_on:
+      - core
+    networks:
+      - mipit-internal
+
+  # ─── Nginx Reverse Proxy ───────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: mipit-nginx
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/certs:/etc/nginx/certs:ro
+    depends_on:
+      - core
+      - ui
+    networks:
+      - mipit-internal
+
+  # ─── Observabilidad ────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: mipit-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ../../mipit-observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - mipit-internal
+
+  grafana:
+    image: grafana/grafana:11.0.0
+    container_name: mipit-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=mipit2026
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ../../mipit-observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../../mipit-observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - mipit-internal
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.56
+    container_name: mipit-jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - mipit-internal

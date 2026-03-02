@@ -1,0 +1,52 @@
+-- Seed de mapeos PIX -> Canónico
+INSERT INTO mapping_table (rail, direction, source_field, target_field, transformation, validation_rule, notes) VALUES
+('PIX', 'TO_CANONICAL', 'pix_tx_id',     'rail_ack.rail_tx_id',  'copy',          'not_empty',   'ID propio del riel'),
+('PIX', 'TO_CANONICAL', 'valor',         'amount.value',         'parse_decimal', 'gt_zero',     '2 decimales'),
+('PIX', 'TO_CANONICAL', 'moeda',         'fx.source_currency',   'copy',          'iso_4217',    'BRL esperado'),
+('PIX', 'TO_CANONICAL', 'chaveOrigem',   'debtor.account_id',    'prefix_PIX',    'pattern',     'Prefijo PIX-'),
+('PIX', 'TO_CANONICAL', 'chaveDestino',  'creditor.account_id',  'prefix_PIX',    'pattern',     'Prefijo PIX-'),
+('PIX', 'TO_CANONICAL', 'nomePagador',   'debtor.name',          'copy',          'len_1_140',   'Sintético/mascarar'),
+('PIX', 'TO_CANONICAL', 'nomeRecebedor', 'creditor.name',        'copy',          'len_1_140',   NULL),
+('PIX', 'TO_CANONICAL', 'finalidade',    'purpose',              'copy',          'len_0_35',    NULL),
+('PIX', 'TO_CANONICAL', 'mensagem',      'reference',            'copy',          'len_0_140',   NULL),
+('PIX', 'TO_CANONICAL', 'timestamp',     'created_at',           'ignore',        NULL,          'Core genera UTC'),
+('PIX', 'TO_CANONICAL', 'status',        'rail_ack.status',      'map_status',    'enum',        'ACCEPTED/REJECTED'),
+('PIX', 'TO_CANONICAL', 'erro_codigo',   'rail_ack.error.code',  'copy',          NULL,          NULL),
+('PIX', 'TO_CANONICAL', 'erro_mensagem', 'rail_ack.error.message','copy',         NULL,          NULL),
+
+-- Seed de mapeos Canónico -> PIX
+('PIX', 'FROM_CANONICAL', 'payment_id',           'pix_tx_ref',    'copy',           NULL,        'Referencia'),
+('PIX', 'FROM_CANONICAL', 'amount.value',          'valor',         'convert_to_BRL', 'gt_zero',   'Usando fx.rate'),
+('PIX', 'FROM_CANONICAL', 'fx.source_currency',    'moeda',         'set_BRL',        'iso_4217',  NULL),
+('PIX', 'FROM_CANONICAL', 'debtor.account_id',     'chaveOrigem',   'strip_prefix',   'pattern',   NULL),
+('PIX', 'FROM_CANONICAL', 'creditor.account_id',   'chaveDestino',  'strip_prefix',   'pattern',   NULL),
+('PIX', 'FROM_CANONICAL', 'debtor.name',           'nomePagador',   'copy',           'len_1_140', NULL),
+('PIX', 'FROM_CANONICAL', 'creditor.name',         'nomeRecebedor', 'copy',           'len_1_140', NULL),
+('PIX', 'FROM_CANONICAL', 'purpose',               'finalidade',    'truncate_35',    'len_0_35',  NULL),
+('PIX', 'FROM_CANONICAL', 'reference',             'mensagem',      'truncate_140',   'len_0_140', NULL),
+
+-- Seed de mapeos SPEI -> Canónico
+('SPEI', 'TO_CANONICAL', 'spei_tx_id',          'rail_ack.rail_tx_id',   'copy',          'not_empty',  'ID propio riel'),
+('SPEI', 'TO_CANONICAL', 'monto',               'amount.value',          'parse_decimal', 'gt_zero',    '2 decimales'),
+('SPEI', 'TO_CANONICAL', 'moneda',              'fx.source_currency',    'copy',          'iso_4217',   'MXN esperado'),
+('SPEI', 'TO_CANONICAL', 'clabe_origen',        'debtor.account_id',     'prefix_SPEI',   '18_digits',  'Prefijo SPEI-'),
+('SPEI', 'TO_CANONICAL', 'clabe_destino',       'creditor.account_id',   'prefix_SPEI',   '18_digits',  'Prefijo SPEI-'),
+('SPEI', 'TO_CANONICAL', 'nombre_ordenante',    'debtor.name',           'copy',          'len_1_140',  NULL),
+('SPEI', 'TO_CANONICAL', 'nombre_beneficiario', 'creditor.name',         'copy',          'len_1_140',  NULL),
+('SPEI', 'TO_CANONICAL', 'concepto_pago',       'purpose',               'copy',          'len_0_35',   NULL),
+('SPEI', 'TO_CANONICAL', 'referencia_numerica', 'reference',             'copy',          'len_0_140',  NULL),
+('SPEI', 'TO_CANONICAL', 'timestamp',           'created_at',            'ignore',        NULL,         'Core genera UTC'),
+('SPEI', 'TO_CANONICAL', 'estatus',             'rail_ack.status',       'map_status',    'enum',       'ACEPTADO/RECHAZADO'),
+('SPEI', 'TO_CANONICAL', 'codigo_error',        'rail_ack.error.code',   'copy',          NULL,         NULL),
+('SPEI', 'TO_CANONICAL', 'mensaje_error',       'rail_ack.error.message','copy',          NULL,         NULL),
+
+-- Seed de mapeos Canónico -> SPEI
+('SPEI', 'FROM_CANONICAL', 'payment_id',          'spei_tx_ref',         'copy',           NULL,        NULL),
+('SPEI', 'FROM_CANONICAL', 'amount.value',         'monto',              'convert_to_MXN', 'gt_zero',   'Usando fx.rate'),
+('SPEI', 'FROM_CANONICAL', 'fx.source_currency',   'moneda',             'set_MXN',        'iso_4217',  NULL),
+('SPEI', 'FROM_CANONICAL', 'debtor.account_id',    'clabe_origen',       'strip_prefix',   '18_digits', NULL),
+('SPEI', 'FROM_CANONICAL', 'creditor.account_id',  'clabe_destino',      'strip_prefix',   '18_digits', NULL),
+('SPEI', 'FROM_CANONICAL', 'debtor.name',          'nombre_ordenante',   'copy',           'len_1_140', NULL),
+('SPEI', 'FROM_CANONICAL', 'creditor.name',        'nombre_beneficiario','copy',           'len_1_140', NULL),
+('SPEI', 'FROM_CANONICAL', 'purpose',              'concepto_pago',      'truncate_35',    'len_0_35',  NULL),
+('SPEI', 'FROM_CANONICAL', 'reference',            'referencia_numerica','truncate_140',   'len_0_140', NULL);
