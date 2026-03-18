@@ -37,6 +37,7 @@ CREATE TABLE payments (
     sent_at          TIMESTAMPTZ,
     acked_at         TIMESTAMPTZ,
     completed_at     TIMESTAMPTZ,
+    failed_at        TIMESTAMPTZ,
     updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -48,21 +49,17 @@ CREATE INDEX idx_payments_destination_rail ON payments(destination_rail);
 
 -- ─── Tabla audit_events ─────────────────────────────
 CREATE TABLE audit_events (
-    id               BIGSERIAL PRIMARY KEY,
+    id               TEXT PRIMARY KEY,
     payment_id       TEXT NOT NULL REFERENCES payments(payment_id),
     event_type       TEXT NOT NULL,
-    stage            TEXT NOT NULL,
-    status           TEXT NOT NULL,
+    actor            TEXT NOT NULL,
     detail           JSONB,
     trace_id         TEXT,
-    adapter_id       TEXT,
-    instance_id      TEXT,
-    latency_ms       INTEGER,
     created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_audit_payment_id ON audit_events(payment_id);
-CREATE INDEX idx_audit_stage ON audit_events(stage);
+CREATE INDEX idx_audit_event_type ON audit_events(event_type);
 CREATE INDEX idx_audit_created_at ON audit_events(created_at);
 
 -- ─── Tabla route_rules ──────────────────────────────
