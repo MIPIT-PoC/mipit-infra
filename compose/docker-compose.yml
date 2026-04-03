@@ -100,6 +100,21 @@ services:
     networks:
       - mipit-internal
 
+  # ─── Adaptador Bre-B (Colombia) ────────────
+  adapter-breb:
+    image: ghcr.io/mipit-poc/mipit-adapter-breb:latest
+    build:
+      context: ../../mipit-adapter-breb
+      dockerfile: Dockerfile
+    container_name: mipit-adapter-breb
+    restart: unless-stopped
+    env_file: ../env/breb.env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - mipit-internal
+
   # ─── UI ────────────────────────────────────
   ui:
     image: ghcr.io/mipit-poc/mipit-ui:latest
