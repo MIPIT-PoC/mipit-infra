@@ -93,7 +93,7 @@ CREATE TABLE mapping_table (
 -- ─── Tabla idempotency_keys ─────────────────────────
 CREATE TABLE idempotency_keys (
     idempotency_key  TEXT PRIMARY KEY,
-    payment_id       TEXT NOT NULL REFERENCES payments(payment_id),
+    payment_id       TEXT NOT NULL,  -- no FK: claim is inserted before payment row exists
     request_hash     TEXT NOT NULL,
     response_status  INTEGER,
     response_body    JSONB,
