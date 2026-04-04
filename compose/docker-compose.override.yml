@@ -30,6 +30,16 @@ services:
       - LOG_LEVEL=debug
       - NODE_ENV=development
 
+  adapter-breb:
+    build:
+      context: ../../mipit-adapter-breb
+      dockerfile: Dockerfile
+    volumes:
+      - ../../mipit-adapter-breb/src:/app/src:ro
+    environment:
+      - LOG_LEVEL=debug
+      - NODE_ENV=development
+
   ui:
     build:
       context: ../../mipit-ui

@@ -36,14 +36,27 @@
       "auto_delete": false,
       "arguments": {}
     },
+    {
+      "name": "payments.route.breb",
+      "vhost": "mipit",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-dead-letter-exchange": "mipit.dlx",
+        "x-dead-letter-routing-key": "dlq.breb"
+      }
+    },
     { "name": "dlq.pix",  "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} },
-    { "name": "dlq.spei", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} }
+    { "name": "dlq.spei", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} },
+    { "name": "dlq.breb", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} }
   ],
   "bindings": [
     { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.route.pix",  "destination_type": "queue", "routing_key": "route.pix" },
     { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.route.spei", "destination_type": "queue", "routing_key": "route.spei" },
+    { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.route.breb", "destination_type": "queue", "routing_key": "route.breb" },
     { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.ack",        "destination_type": "queue", "routing_key": "ack.#" },
     { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.pix",              "destination_type": "queue", "routing_key": "dlq.pix" },
-    { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.spei",             "destination_type": "queue", "routing_key": "dlq.spei" }
+    { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.spei",             "destination_type": "queue", "routing_key": "dlq.spei" },
+    { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.breb",             "destination_type": "queue", "routing_key": "dlq.breb" }
   ]
 }
