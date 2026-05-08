@@ -1,5 +1,12 @@
 # Development overrides — hot-reload, debug ports, relaxed resource limits
 services:
+  postgres:
+    # Many local Windows installs already bind 5432 (PostgreSQL Server service).
+    # Map the docker postgres to 5433 on the host so suite tests running from
+    # the host can target it without colliding with the native install.
+    ports:
+      - "5433:5432"
+
   core:
     build:
       context: ../../mipit-core
