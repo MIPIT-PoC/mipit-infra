@@ -23,6 +23,12 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../../mipit-adapter-pix/src:/app/src:ro
+    # Expose mock + health ports so the validation suite can reach the
+    # PIX mock admin endpoint and the adapter health endpoint from the
+    # host. Mirrors the VM2 deployment topology.
+    ports:
+      - "9001:9001"
+      - "9101:9101"
     environment:
       - LOG_LEVEL=debug
       - NODE_ENV=development
@@ -33,6 +39,9 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../../mipit-adapter-spei/src:/app/src:ro
+    ports:
+      - "9002:9002"
+      - "9102:9102"
     environment:
       - LOG_LEVEL=debug
       - NODE_ENV=development
@@ -43,6 +52,9 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ../../mipit-adapter-breb/src:/app/src:ro
+    ports:
+      - "9003:9003"
+      - "9103:9103"
     environment:
       - LOG_LEVEL=debug
       - NODE_ENV=development
