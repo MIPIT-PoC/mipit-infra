@@ -80,6 +80,9 @@ services:
     container_name: mipit-adapter-pix
     restart: unless-stopped
     env_file: ../env/pix.env
+    ports:
+      - "9001:9001"
+      - "9101:9101"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -95,6 +98,9 @@ services:
     container_name: mipit-adapter-spei
     restart: unless-stopped
     env_file: ../env/spei.env
+    ports:
+      - "9002:9002"
+      - "9102:9102"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -110,6 +116,9 @@ services:
     container_name: mipit-adapter-breb
     restart: unless-stopped
     env_file: ../env/breb.env
+    ports:
+      - "9003:9003"
+      - "9103:9103"
     depends_on:
       rabbitmq:
         condition: service_healthy
