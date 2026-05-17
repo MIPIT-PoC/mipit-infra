@@ -1,12 +1,14 @@
 {
+  "rabbit_version": "3.13.0",
   "users": [],
   "vhosts": [{ "name": "mipit" }],
   "permissions": [
     { "user": "mipit", "vhost": "mipit", "configure": ".*", "write": ".*", "read": ".*" }
   ],
   "exchanges": [
-    { "name": "mipit.payments", "vhost": "mipit", "type": "topic", "durable": true, "auto_delete": false },
-    { "name": "mipit.dlx",     "vhost": "mipit", "type": "topic", "durable": true, "auto_delete": false }
+    { "name": "mipit.payments", "vhost": "mipit", "type": "topic",  "durable": true, "auto_delete": false, "arguments": { "alternate-exchange": "mipit.unrouted" } },
+    { "name": "mipit.dlx",      "vhost": "mipit", "type": "topic",  "durable": true, "auto_delete": false, "arguments": {} },
+    { "name": "mipit.unrouted", "vhost": "mipit", "type": "fanout", "durable": true, "auto_delete": false, "arguments": {} }
   ],
   "queues": [
     {
@@ -15,8 +17,11 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {
+        "x-queue-type": "quorum",
         "x-dead-letter-exchange": "mipit.dlx",
-        "x-dead-letter-routing-key": "dlq.pix"
+        "x-dead-letter-routing-key": "dlq.pix",
+        "x-message-ttl": 3600000,
+        "x-max-length": 100000
       }
     },
     {
@@ -25,16 +30,12 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {
+        "x-queue-type": "quorum",
         "x-dead-letter-exchange": "mipit.dlx",
-        "x-dead-letter-routing-key": "dlq.spei"
+        "x-dead-letter-routing-key": "dlq.spei",
+        "x-message-ttl": 3600000,
+        "x-max-length": 100000
       }
-    },
-    {
-      "name": "payments.ack",
-      "vhost": "mipit",
-      "durable": true,
-      "auto_delete": false,
-      "arguments": {}
     },
     {
       "name": "payments.route.breb",
@@ -42,21 +43,40 @@
       "durable": true,
       "auto_delete": false,
       "arguments": {
+        "x-queue-type": "quorum",
         "x-dead-letter-exchange": "mipit.dlx",
-        "x-dead-letter-routing-key": "dlq.breb"
+        "x-dead-letter-routing-key": "dlq.breb",
+        "x-message-ttl": 3600000,
+        "x-max-length": 100000
       }
     },
-    { "name": "dlq.pix",  "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} },
-    { "name": "dlq.spei", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} },
-    { "name": "dlq.breb", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": {} }
+    {
+      "name": "payments.ack",
+      "vhost": "mipit",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {
+        "x-queue-type": "quorum",
+        "x-dead-letter-exchange": "mipit.dlx",
+        "x-dead-letter-routing-key": "dlq.ack",
+        "x-message-ttl": 3600000
+      }
+    },
+    { "name": "dlq.pix",  "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "dlq.spei", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "dlq.breb", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "dlq.ack",  "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } },
+    { "name": "unrouted", "vhost": "mipit", "durable": true, "auto_delete": false, "arguments": { "x-queue-type": "quorum" } }
   ],
   "bindings": [
     { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.route.pix",  "destination_type": "queue", "routing_key": "route.pix" },
     { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.route.spei", "destination_type": "queue", "routing_key": "route.spei" },
     { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.route.breb", "destination_type": "queue", "routing_key": "route.breb" },
     { "source": "mipit.payments", "vhost": "mipit", "destination": "payments.ack",        "destination_type": "queue", "routing_key": "ack.#" },
-    { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.pix",              "destination_type": "queue", "routing_key": "dlq.pix" },
-    { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.spei",             "destination_type": "queue", "routing_key": "dlq.spei" },
-    { "source": "mipit.dlx",     "vhost": "mipit", "destination": "dlq.breb",             "destination_type": "queue", "routing_key": "dlq.breb" }
+    { "source": "mipit.dlx",      "vhost": "mipit", "destination": "dlq.pix",             "destination_type": "queue", "routing_key": "dlq.pix" },
+    { "source": "mipit.dlx",      "vhost": "mipit", "destination": "dlq.spei",            "destination_type": "queue", "routing_key": "dlq.spei" },
+    { "source": "mipit.dlx",      "vhost": "mipit", "destination": "dlq.breb",            "destination_type": "queue", "routing_key": "dlq.breb" },
+    { "source": "mipit.dlx",      "vhost": "mipit", "destination": "dlq.ack",             "destination_type": "queue", "routing_key": "dlq.ack" },
+    { "source": "mipit.unrouted", "vhost": "mipit", "destination": "unrouted",            "destination_type": "queue", "routing_key": "" }
   ]
 }

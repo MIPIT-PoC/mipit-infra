@@ -16,8 +16,18 @@ done
 echo "==> Levantando servicios..."
 docker compose up -d --build
 
-echo "==> Esperando health checks..."
-sleep 5
+echo "==> Esperando que postgres esté healthy..."
+for i in {1..30}; do
+  status=$(docker inspect -f '{{.State.Health.Status}}' mipit-postgres 2>/dev/null || echo "unknown")
+  if [ "$status" = "healthy" ]; then break; fi
+  sleep 2
+done
+
+echo "==> Aplicando migraciones DB (db/migrations/) ..."
+bash ../scripts/migrate.sh
+
+echo "==> Esperando health checks generales..."
+sleep 3
 bash ../scripts/health-check.sh
 
 echo "==> MiPIT PoC listo!"
