@@ -8,6 +8,7 @@ volumes:
   rabbitmq-data:
   grafana-data:
   prometheus-data:
+  alertmanager-data: # P07: persistent storage for AlertManager silences/notifications.
 
 services:
   # ─── Base de datos ───────────────────────────
@@ -167,7 +168,28 @@ services:
       - "9090:9090"
     volumes:
       - ../../mipit-observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      # P07 — Mount the rules directory so prometheus.yml's `rule_files:` glob
+      # actually finds something. Without this, alert + recording rules don't load.
+      - ../../mipit-observability/prometheus/rules:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
+    networks:
+      - mipit-internal
+
+  # P07 — AlertManager. Required for the alert rules in
+  # prometheus/rules/mipit-alerts.yaml to actually reach somewhere.
+  # Receivers configured in mipit-observability/alertmanager/alertmanager.yml.
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: mipit-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ../../mipit-observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
     networks:
       - mipit-internal
 
