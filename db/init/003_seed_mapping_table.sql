@@ -1,3 +1,27 @@
+-- =============================================================================
+-- W5.14 — Mapping-as-documentation (NOT a runtime policy engine)
+--
+-- This table records, for human/audit consumption, the field-by-field mapping
+-- between each rail's native wire format and the canonical pacs.008-derived
+-- model. The `transformation` column lists the symbolic name of the function
+-- that conceptually maps each field.
+--
+-- The actual translation logic lives in TypeScript under
+--   mipit-core/src/translation/{pix,spei,breb}-to-canonical.ts and the inverse.
+-- That code is tested with Zod schemas and produces validated outputs at compile
+-- time, which is preferable for a payments middleware over a dynamic mini-DSL
+-- driven from this table (we evaluated it during P01 and the DSL approach added
+-- runtime risk without giving real flexibility for a 3-rail PoC).
+--
+-- Therefore the `transformation` column should be read as a **decision record**
+-- of which TS function handles each field, NOT as a directive the runtime
+-- interprets. Some symbolic names (e.g. `convert_to_BRL`, `parse_decimal`,
+-- `prefix_PIX`) intentionally do not have a corresponding case in the runtime
+-- switch — they document intent, not behavior.
+--
+-- See `audits/AUDITORIA-2-2026-05-17.md` finding C3 / I5 for full context.
+-- =============================================================================
+
 -- Seed de mapeos PIX -> Canónico
 INSERT INTO mapping_table (rail, direction, source_field, target_field, transformation, validation_rule, notes) VALUES
 ('PIX', 'TO_CANONICAL', 'pix_tx_id',     'rail_ack.rail_tx_id',  'copy',          'not_empty',   'ID propio del riel'),
