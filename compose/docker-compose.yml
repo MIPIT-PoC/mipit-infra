@@ -132,6 +132,12 @@ services:
     build:
       context: ../../mipit-ui
       dockerfile: Dockerfile
+      # Audit 3 CORS fix — Next.js bakea NEXT_PUBLIC_* en build time.
+      # Estos args van al `docker build` (env_file de abajo es runtime).
+      # Si cambias estos valores, hace falta `docker compose build ui`.
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+        NEXT_PUBLIC_APP_NAME: MiPIT PoC
     container_name: mipit-ui
     restart: unless-stopped
     env_file: ../env/ui.env
